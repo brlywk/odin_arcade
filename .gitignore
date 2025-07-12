@@ -1,0 +1,16 @@
+# Odin Compiler Output
+*.bin
+*.exe
+*.out
+*.app
+*.dll
+*.so
+*.dylib
+
+# Odin build artifacts
+build/
+
+# macOS
+.DS_Store
+*.dSYM/
+
