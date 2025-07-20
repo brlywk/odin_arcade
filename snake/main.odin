@@ -16,15 +16,19 @@ Rect :: rl.Rectangle
 
 //
 // Constants
-// 
+//
 
-WIN_W :: GAME_FIELD_SIZE + 2 * UI_PADDING
-WIN_H :: GAME_FIELD_POS_Y + GAME_FIELD_SIZE + UI_PADDING
+WIN_W :: GAME_FIELD_SIZE + 2 * UI_PADDING + 2 * GAME_FIELD_BORDER_SIZE
+WIN_H :: GAME_FIELD_POS_Y + GAME_FIELD_SIZE + UI_PADDING + GAME_FIELD_BORDER_SIZE
 WIN_CENTER :: Vec2{WIN_W / 2, WIN_H / 2}
+
+GAME_STEP_SPEED :: 0.8
 
 BG_COLOR :: rl.LIGHTGRAY
 
 main :: proc() {
+	log_level := log.Level.Warning
+
 	when ODIN_DEBUG {
 		// tracking allocator for learning purposes
 		track: mem.Tracking_Allocator
@@ -32,9 +36,11 @@ main :: proc() {
 		// defer mem.tracking_allocator_destroy(&track) - see comment below
 		context.allocator = mem.tracking_allocator(&track)
 		defer check_tracking_allocator(&track, true) // use helper to destroy allocator
+
+		log_level = log.Level.Debug
 	}
 	// set up logger
-	context.logger = log.create_console_logger()
+	context.logger = log.create_console_logger(log_level)
 	defer log.destroy_console_logger(context.logger)
 
 	// set up rng
@@ -46,44 +52,19 @@ main :: proc() {
 	rl.InitWindow(WIN_W, WIN_H, "Sneck")
 	defer rl.CloseWindow()
 
-	// set up entities
-	data := Game_Data{}
-	player := player_new(WIN_CENTER - PLAYER_SEGMENT_SIZE)
-	log.info("Game Data", data)
+	player := player_new(field_center())
+	game := game_new(player, GAME_STEP_SPEED)
+	defer game_destroy(&game)
+	game_init(&game)
+
+	log.debug("Game Data", game)
 
 	for !rl.WindowShouldClose() {
+		// UPDATE
+		game_update(&game)
+
 		// DRAW
-		rl.BeginDrawing()
-		defer rl.EndDrawing()
-
-		// background
-		rl.ClearBackground(BG_COLOR)
-
-		// game field
-		ui_draw_field_bg()
-
-		// draw player
-		player_draw(player)
-
-		// draw field border
-		ui_draw_field_border()
-
-		// UI
-		ui_draw_score(data)
+		game_draw(&game)
 	}
-}
-
-//
-// Utilities
-//
-
-// Returns width and height for the given rl.Rectange rect.
-get_size :: proc(rect: Rect) -> (width, height: f32) {
-	return rect.width, rect.height
-}
-
-// Returns x and y for the given rl.Rectangle rect.
-get_position :: proc(rect: Rect) -> (x, y: f32) {
-	return rect.x, rect.y
 }
 
