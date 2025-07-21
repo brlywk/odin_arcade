@@ -62,7 +62,10 @@ player_draw :: proc(player: Player) {
 
 // Returns the position the player will move to next based on current direction.
 player_next_move :: proc(player: ^Player) -> Vec2 {
-	player.direction = player.queued_direction
+	if player.queued_direction != _opposite_dir(player.direction) || len(player.segments) == 0 {
+		player.direction = player.queued_direction
+	}
+
 	return _player_head(player) + (_player_direction_vec(player) * PLAYER_SEGMENT_SIZE)
 }
 
@@ -107,6 +110,12 @@ player_occupies_field :: proc(player: ^Player, pos: Vec2) -> bool {
 	}
 
 	return false
+}
+
+player_noms :: proc(player: ^Player, new_head_pos: Vec2) {
+	_player_add_segment(player)
+	player.x = new_head_pos.x
+	player.y = new_head_pos.y
 }
 
 player_delete :: proc(player: ^Player) {
@@ -192,6 +201,22 @@ _player_direction_vec :: proc(player: ^Player) -> Vec2 {
 _player_add_segment :: proc(player: ^Player) {
 	head := _player_head(player)
 	inject_at(&player.segments, 0, head)
+}
+
+// Returns the opposite direction of a.
+_opposite_dir :: proc(a: Direction) -> Direction {
+	switch a {
+	case .Up:
+		return .Down
+	case .Down:
+		return .Up
+	case .Left:
+		return .Right
+	case .Right:
+		return .Left
+	}
+
+	panic("unknown direction")
 }
 
 // Cascade position updates to the player through all segments.

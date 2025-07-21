@@ -7,6 +7,7 @@ of hours.
 
 ## Games
 - **Breakout**
+- **Snake**
 - More might be coming with more travel time ;)
 
 ## Installation
@@ -17,6 +18,9 @@ Then just clone this repo and run:
 ```bash
 cd breakout
 odin run .
+
+# Run with debug info's (e.g. tracking allocator)
+odin run . -debug
 ```
 
 ## Notes

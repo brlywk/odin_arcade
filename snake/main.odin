@@ -22,7 +22,7 @@ WIN_W :: GAME_FIELD_SIZE + 2 * UI_PADDING + 2 * GAME_FIELD_BORDER_SIZE
 WIN_H :: GAME_FIELD_POS_Y + GAME_FIELD_SIZE + UI_PADDING + GAME_FIELD_BORDER_SIZE
 WIN_CENTER :: Vec2{WIN_W / 2, WIN_H / 2}
 
-GAME_STEP_SPEED :: 0.8
+GAME_STEP_SPEED :: 0.42 // time each "game step" takes -> essentially the game's speed
 
 BG_COLOR :: rl.LIGHTGRAY
 
@@ -65,6 +65,9 @@ main :: proc() {
 
 		// DRAW
 		game_draw(&game)
+
+		// CLEANUP
+		free_all(context.temp_allocator)
 	}
 }
 
