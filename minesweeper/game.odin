@@ -1,5 +1,6 @@
 package main
 
+import "core:time"
 import rl "vendor:raylib"
 
 Difficulty :: enum {
@@ -20,6 +21,10 @@ Game :: struct {
 	field:             Field,
 	field_created:     bool, // graphical setup based on difficulty etc.
 	field_initialized: bool, // mines have been placed after first click etc.
+	over:              bool, // easier this way to still have the field drawn
+	won:               bool,
+	start_time:        time.Time,
+	elapsed_time:      f64,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,6 +58,8 @@ game_init_playing :: proc(game: ^Game, allocator := context.allocator) {
 	field_settings := GAME_DIFFICULTY_FIELD_SETTINGS[game.difficulty]
 	game.field = field_create(field_settings, game.field_bounds, allocator)
 	game.field_created = true
+
+	game.start_time = time.now()
 }
 
 game_destroy :: proc(game: ^Game) {
@@ -74,6 +81,7 @@ game_update :: proc(game: ^Game) {
 
 	case .Playing:
 		game_update_playing(game)
+
 	}
 }
 
@@ -84,6 +92,12 @@ game_update_difficulty_selection :: proc(game: ^Game) {
 }
 
 game_update_playing :: proc(game: ^Game, allocator := context.allocator) {
+	// update game time
+	if !game.over {
+		now := time.now()
+		game.elapsed_time = time.duration_seconds(time.diff(game.start_time, now))
+	}
+
 	// do an init of the field the first time we run this
 	game_init_playing(game, allocator)
 
@@ -102,6 +116,7 @@ game_draw :: proc(game: ^Game) {
 
 	case .Playing:
 		game_draw_playing(game)
+
 	}
 }
 
@@ -111,6 +126,7 @@ game_draw_difficulty_selection :: proc(game: ^Game) {
 
 game_draw_playing :: proc(game: ^Game) {
 	field_draw(&game.field)
+	ui_draw(game)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

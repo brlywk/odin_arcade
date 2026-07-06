@@ -62,23 +62,19 @@ field_draw :: proc(field: ^Field) {
 ////////////////////////////////////////////////////////////////////////////////
 
 field_place_mines :: proc(initial_click_idx: int, field: ^Field) {
-	// general approach:
-	// - first click never is a mine, and therefore only after first click
-	// placement is done
-	// - create a safezone around first click with no mines
-	// - place mines randomly in remaining coordinate candidates
-	// - after mines are places, update all adjacent mine information on all
-	// safe, not uncovered cells
-
 	// safe zone is only the cells directly adjacent to the clicked cell
 	// NOTE: Currently hard coded radius, maybe change this later
-	safe_zone := field_get_safe_zone_cells(initial_click_idx, field, 1, context.temp_allocator)
-	fmt.println("Safe indices:\n", safe_zone)
+	safe_zone := field_get_adjacent_cells(
+		initial_click_idx,
+		field,
+		1,
+		false,
+		context.temp_allocator,
+	)
 	safe_zone_set := make(map[int]struct{}, len(safe_zone), context.temp_allocator)
 	for idx in safe_zone {
 		safe_zone_set[idx] = {}
 	}
-	fmt.println("Safe set:", safe_zone_set)
 
 	// all indices that are potential candidates for mines
 	mine_candidate_indices := make([dynamic]int, context.temp_allocator)
@@ -90,12 +86,10 @@ field_place_mines :: proc(initial_click_idx: int, field: ^Field) {
 	}
 
 	// shuffle candidate list...
-	fmt.println("Mine candidates:", mine_candidate_indices[:])
 	rand.shuffle(mine_candidate_indices[:])
-	fmt.println("Mine candidates shuffled:", mine_candidate_indices[:])
 
 	// ... and set the first n mine candidates to actually be a mine
-	for m in mine_candidate_indices[:field.mines - 1] {
+	for m in mine_candidate_indices[:field.mines] {
 		cell, ok := field_get_cell_at(m, field)
 		if !ok do panic("A mine candidate has no corresponding cell in the field grid")
 		cell.kind = .Mine
@@ -113,6 +107,33 @@ field_place_mines :: proc(initial_click_idx: int, field: ^Field) {
 	}
 }
 
+flood_fill :: proc(start_idx: int, field: ^Field) {
+	stack := make([dynamic]int, context.temp_allocator)
+	append(&stack, start_idx)
+
+	for len(stack) != 0 {
+		idx := pop(&stack)
+
+		cell, ok := field_get_cell_at(idx, field)
+		if !ok || cell.state == .Revealed || cell.kind == .Mine do continue
+
+		cell.state = .Revealed
+
+		if cell.adjacent_mines == 0 {
+			adjacent := field_get_adjacent_cells(idx, field, 1, true, context.temp_allocator)
+
+			for c_idx in adjacent {
+				c, _ := field_get_cell_at(c_idx, field)
+				if c.state != .Revealed && c.kind != .Mine do append(&stack, c_idx)
+			}
+		}
+	}
+}
+
+field_reveal_all :: proc(field: ^Field) {
+	for &cell in field.grid do cell.state = .Revealed
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Helper
 ////////////////////////////////////////////////////////////////////////////////
@@ -125,10 +146,11 @@ field_get_cell_at :: proc(idx: int, field: ^Field) -> (^Cell, bool) {
 }
 
 // Returns all cell indices for a "safe zone" of `radius` cells around `idx`.
-field_get_safe_zone_cells :: proc(
+field_get_adjacent_cells :: proc(
 	idx: int,
 	field: ^Field,
 	radius: int,
+	skip_self := true,
 	allocator := context.allocator,
 ) -> []int {
 	cells := make([dynamic]int, allocator)
@@ -139,8 +161,7 @@ field_get_safe_zone_cells :: proc(
 
 	for y := -radius; y <= radius; y += 1 {
 		for x := -radius; x <= radius; x += 1 {
-			// NOTE: we need to include `idx` as well, so we can have an easier
-			// time checking all valid mine positions later...
+			if skip_self && y == 0 && x == 0 do continue
 
 			r := row + y
 			c := col + x
@@ -157,7 +178,7 @@ field_get_safe_zone_cells :: proc(
 field_get_adjacent_mine_count :: proc(idx: int, field: ^Field) -> int {
 	mine_count := 0
 
-	adjacent := field_get_safe_zone_cells(idx, field, 1)
+	adjacent := field_get_adjacent_cells(idx, field, 1)
 	defer delete(adjacent)
 
 	for i in adjacent {
@@ -169,4 +190,14 @@ field_get_adjacent_mine_count :: proc(idx: int, field: ^Field) -> int {
 	}
 
 	return mine_count
+}
+
+field_conceiled_count :: proc(field: ^Field) -> u8 {
+	num: u8 = 0
+
+	for cell in field.grid {
+		if cell.state == .Concealed do num += 1
+	}
+
+	return num
 }

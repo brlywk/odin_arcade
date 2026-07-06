@@ -5,12 +5,16 @@ import rl "vendor:raylib"
 
 handle_difficulty_selection_input :: proc(game: ^Game) {
 	mouse_pos := rl.GetMousePosition()
+
+	// TODO: implement
 }
 
 
 // Handles clicking on the playing field.
 handle_game_playing_input :: proc(game: ^Game) {
 	mouse_pos := rl.GetMousePosition()
+
+	if game.over do return
 
 	// reveal stuff
 	if rl.IsMouseButtonPressed(.LEFT) {
@@ -19,21 +23,34 @@ handle_game_playing_input :: proc(game: ^Game) {
 
 		// first click should start the whole mine laying process
 		if !game.field_initialized {
-			// TODO: place mines...
 			field_place_mines(idx, &game.field)
 			game.field_initialized = true
 
 			// afterwards: for best game feel, the safezone around the first
 			// click guarantees that we can do some floodfilling to uncover a
 			// number of fields directly...
+			flood_fill(idx, &game.field)
 		}
 
+		// actual interaction goes here...
 		if valid && ok {
-			// DEBUG: Delete...
-			fmt.printfln("Left Click at x=%f y=%f:\n\t%v ", mouse_pos.x, mouse_pos.y, cell)
-			c, _ := cell_at(mouse_pos, &game.field)
-			fmt.printfln("\tCoords: %v", c)
-			fmt.printfln("\tIndex: %d", idx)
+			switch cell.kind {
+			case .Safe:
+				flood_fill(idx, &game.field)
+
+				// win condition
+				if field_conceiled_count(&game.field) == game.field.mines {
+					game.over = true
+					game.won = true
+					fmt.println("Game Over! You win!")
+				}
+
+			case .Mine:
+				field_reveal_all(&game.field)
+				game.over = true
+				game.won = false
+				fmt.println("Game Over! You lose!")
+			}
 		}
 	}
 
@@ -43,11 +60,6 @@ handle_game_playing_input :: proc(game: ^Game) {
 		cell, ok := field_get_cell_at(idx, &game.field)
 
 		if valid && ok {
-			// DEBUG: Delete...
-			fmt.printfln("Right Click at x=%f y=%f:\n\t%v ", mouse_pos.x, mouse_pos.y, cell)
-			c, _ := cell_at(mouse_pos, &game.field)
-			fmt.printfln("\tCoords: %v", c)
-
 			switch cell.state {
 			case .Flagged:
 				cell.state = .Concealed

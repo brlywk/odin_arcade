@@ -37,8 +37,29 @@ cell_draw :: proc(cell: Cell, idx: int, field: ^Field) {
 	rl.DrawRectangleRec(rect, cell.state == .Revealed ? CELL_BG_REVEALED : CELL_BG_HIDDEN)
 	rl.DrawRectangleLinesEx(rect, CELL_BORDER_WIDTH, CELL_BORDER_COLOR)
 
-	// draw flag marker
-	if cell.state == .Flagged {
+	// draw state specifics
+	switch cell.state {
+	case .Concealed:
+	// nothing to do here...
+
+	case .Revealed:
+		switch cell.kind {
+		case .Safe:
+			if cell.adjacent_mines == 0 do return
+
+			text := fmt.ctprint(cell.adjacent_mines)
+
+			text_w := rl.MeasureText(text, marker_size)
+			text_x := rect_center(rect).x - f32(text_w) / 2.0
+			text_y := rect_center(rect).y - marker_size / 2.0
+
+			rl.DrawText(text, i32(text_x), i32(text_y), marker_size, rl.YELLOW)
+
+		case .Mine:
+			rl.DrawCircleV(rect_center(rect), marker_size / 2, rl.RED)
+		}
+
+	case .Flagged:
 		text := strings.clone_to_cstring("?", context.temp_allocator)
 		w := f32(rl.MeasureText(text, marker_size))
 		rl.DrawText(
@@ -124,4 +145,3 @@ cell_rect :: proc(field: ^Field, coords: Coord) -> rl.Rectangle {
 		height = cs,
 	}
 }
-

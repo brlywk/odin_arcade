@@ -9,6 +9,10 @@ WINDOW_HEIGHT :: 768
 WINDOW_BG :: rl.WHITE
 WINDOW_PADDING :: 8.0
 
+// UI
+//
+UI_FONT_SIZE :: 24.0
+
 // FIELD
 //
 // stored as Vec3 with {cols, rows, mines}
