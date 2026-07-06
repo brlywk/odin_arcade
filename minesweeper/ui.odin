@@ -19,11 +19,6 @@ ui_draw :: proc(game: ^Game) {
 		UI_FONT_SIZE,
 		rl.BLACK,
 	)
-
-}
-
-ui_update :: proc(game: ^Game) {
-	//
 }
 
 ////////////////////////////////////////////////////////////////////////////////

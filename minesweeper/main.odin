@@ -33,6 +33,7 @@ main :: proc() {
 	// GAME STATE
 	//
 	game := game_create()
+	defer game_destroy(&game)
 
 	// RAYLIB
 	rl.InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Minesweeper")

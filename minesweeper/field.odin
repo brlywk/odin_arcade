@@ -23,7 +23,7 @@ field_create :: proc(
 	bounds: rl.Rectangle,
 	allocator := context.allocator,
 ) -> Field {
-	cell_count := int(field_settings.cols * field_settings.rows)
+	cell_count := int(field_settings.cols) * int(field_settings.rows)
 
 	return {
 		cols = field_settings.cols,
@@ -43,12 +43,12 @@ field_draw :: proc(field: ^Field) {
 	rl.DrawRectangleRec(field.bounds, FIELD_BG)
 	rl.DrawRectangleLinesEx(
 		{
-			x = field.bounds.x - FIELD_BORDER_WITDH,
-			y = field.bounds.y - FIELD_BORDER_WITDH,
-			width = field.bounds.width + 2 * FIELD_BORDER_WITDH,
-			height = field.bounds.height + 2 * FIELD_BORDER_WITDH,
+		x = field.bounds.x - FIELD_BORDER_WIDTH,
+		y = field.bounds.y - FIELD_BORDER_WIDTH,
+		width = field.bounds.width + 2 * FIELD_BORDER_WIDTH,
+		height = field.bounds.height + 2 * FIELD_BORDER_WIDTH,
 		},
-		FIELD_BORDER_WITDH,
+		FIELD_BORDER_WIDTH,
 		FIELD_BORDER_COLOR,
 	)
 
@@ -86,6 +86,11 @@ field_place_mines :: proc(initial_click_idx: int, field: ^Field) {
 	}
 
 	// shuffle candidate list...
+	// guard against impossible mine counts
+	if int(field.mines) > len(mine_candidate_indices) {
+		panic("More mines requested than available cells")
+	}
+
 	rand.shuffle(mine_candidate_indices[:])
 
 	// ... and set the first n mine candidates to actually be a mine
@@ -200,4 +205,13 @@ field_conceiled_count :: proc(field: ^Field) -> u8 {
 	}
 
 	return num
+}
+
+field_all_non_mines_revealed :: proc(field: ^Field) -> bool {
+	for cell in field.grid {
+		if cell.kind != .Mine && cell.state != .Revealed {
+			return false
+		}
+	}
+	return true
 }

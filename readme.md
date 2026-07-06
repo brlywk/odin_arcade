@@ -1,6 +1,6 @@
 # Odin Arcade
 
-A repository of small, functional but incomplete classic arcade games rebuilt
+A repository of small, functional but (mostly) incomplete classic arcade games rebuilt
 with Odin and Raylib. The idea came during an especially long and boring train
 ride, to see if I could build a somewhat functional breakout clone in a handful
 of hours.
@@ -8,6 +8,7 @@ of hours.
 ## Games
 - **Breakout**
 - **Snake**
+- **Minesweeper**
 - More might be coming with more travel time ;)
 
 ## Installation

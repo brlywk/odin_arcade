@@ -31,7 +31,8 @@ cell_draw :: proc(cell: Cell, idx: int, field: ^Field) {
 	rect := cell_rect(field, coords)
 
 	// size of markers, e.g. flags, mines etc.
-	marker_size :: 48
+	cs := cell_size(field)
+	marker_size := cs * 0.6
 
 	// draw backround
 	rl.DrawRectangleRec(rect, cell.state == .Revealed ? CELL_BG_REVEALED : CELL_BG_HIDDEN)
@@ -49,25 +50,25 @@ cell_draw :: proc(cell: Cell, idx: int, field: ^Field) {
 
 			text := fmt.ctprint(cell.adjacent_mines)
 
-			text_w := rl.MeasureText(text, marker_size)
+			text_w := rl.MeasureText(text, i32(marker_size))
 			text_x := rect_center(rect).x - f32(text_w) / 2.0
 			text_y := rect_center(rect).y - marker_size / 2.0
 
-			rl.DrawText(text, i32(text_x), i32(text_y), marker_size, rl.YELLOW)
+			rl.DrawText(text, i32(text_x), i32(text_y), i32(marker_size), CELL_FG_NUMBER)
 
 		case .Mine:
-			rl.DrawCircleV(rect_center(rect), marker_size / 2, rl.RED)
+			rl.DrawCircleV(rect_center(rect), marker_size / 2, CELL_FG_MINE)
 		}
 
 	case .Flagged:
 		text := strings.clone_to_cstring("?", context.temp_allocator)
-		w := f32(rl.MeasureText(text, marker_size))
+		w := f32(rl.MeasureText(text, i32(marker_size)))
 		rl.DrawText(
 			text,
 			i32(rect.x + rect.width / 2 - w / 2),
 			i32(rect.y + rect.height / 2 - marker_size / 2),
-			marker_size,
-			rl.ORANGE,
+			i32(marker_size),
+			CELL_FG_FLAG,
 		)
 	}
 
